@@ -13,5 +13,16 @@ namespace TearStar.DialogueSystem
         {
             Name = n;
         }
+
+
+        public static NodeOwner ParseNodeOwner(string Name)
+        {
+            if (Name == "null") return null;
+            else return new NodeOwner(Name);
+        }
+        public static NodeOwner ParseNodeOwner(string Name, List<INodeOwner> i)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

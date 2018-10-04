@@ -84,8 +84,8 @@ namespace TearStar.DialogueSystem
             }
             
             MethodInfo mi = Condition.GetMethodInfo();
-
-            methodName = mi.Name;
+            if(methodName == null || methodName == "")
+                 methodName = mi.Name;
 
             string ParentNodesStrings = "";
             if (MultipleParents)
@@ -127,6 +127,7 @@ namespace TearStar.DialogueSystem
             NodeOwner = owner;
         }
 
+        public INodeOwner GetNodeOwner() => NodeOwner;
 
         public JObject ToJson()
         {
@@ -140,7 +141,7 @@ namespace TearStar.DialogueSystem
                         value = Value,
                         parentNode = from p in ParentNodes select new { nodeID = p.NodeID},
                         method = mi.Name,
-                        safeSave = mi.Name,
+                        safeSave = methodName,
                         nodeID = NodeID,
                         owner = NodeOwner == null ? "null" : NodeOwner.Name,
                         childrenNodes =
@@ -162,7 +163,7 @@ namespace TearStar.DialogueSystem
                         value = Value,
                         parentNode = ParentNode == null ? "null" : ParentNode.Value,
                         method = mi.Name,
-                        safeSave = mi.Name,
+                        safeSave = methodName,
                         nodeID = NodeID,
                         owner = NodeOwner == null ? "null" : NodeOwner.Name,
                         childrenNodes =

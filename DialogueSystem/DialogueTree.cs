@@ -35,12 +35,33 @@ namespace TearStar.DialogueSystem
             ReachedEnd = false;
         }
         public int Count => Nodes.Count;
+        public void AddChildToStart(ConditionalDialogueNode child)
+        {
+            if (child.NodeID == null || child.NodeID.Trim() == "") child.NodeID = AutoID();
+            Nodes.Add(child);
+            Nodes[0].Add(child);
+        }
+        public void AddChildToStart(ConditionalDialogueNode child, string child_id)
+        {
+            if (child.ParentNode == null) child.ParentNode = Nodes[0];
+            child.NodeID = child_id;
+            Nodes.Add(child);
+            Nodes[0].Add(child);
+        }
+        public void AddChildToStart(ConditionalDialogueNode child, string child_id, INodeOwner owner)
+        {
+            if (child.ParentNode == null) child.ParentNode = Nodes[0];
+            child.NodeID = child_id;
+            child.SetNodeOwner(owner);
+
+            Nodes.Add(child);
+            Nodes[0].Add(child);
+        }
         public void AddChild(ConditionalDialogueNode parent, ConditionalDialogueNode child)
         {
             if (Nodes.Count == 2)
             {
-                if (child.ParentNode == null) child.ParentNode = Nodes[0];
-                child.NodeID = AutoID();
+                if (child.NodeID == null || child.NodeID.Trim() == "") child.NodeID = AutoID();
                 Nodes.Add(child);
                 Nodes[0].Add(child);
             }
@@ -53,12 +74,12 @@ namespace TearStar.DialogueSystem
                     //Multiple Parents
                     child.MultipleParents = true;
                     child.AddParent(parent);
-                    if (child.NodeID.Trim() == "") child.NodeID = AutoID();
+                    if (child.NodeID == null || child.NodeID.Trim() == "") child.NodeID = AutoID();
                     Nodes[index].Add(child);
                 }
                 else
                 {
-                    if (child.NodeID.Trim() == "") child.NodeID = AutoID();
+                    if (child.NodeID == null || child.NodeID.Trim() == "") child.NodeID = AutoID();
                     child.AddParent(parent);
                     Nodes.Add(child);
                     Nodes[index].Add(child);
@@ -72,7 +93,7 @@ namespace TearStar.DialogueSystem
             if (Nodes.Count == 2)
             {
                 if (child.ParentNode == null) child.ParentNode = Nodes[0];
-                child.NodeID = AutoID();
+                if (child.NodeID == null || child.NodeID.Trim() == "") child.NodeID = AutoID();
                 child.SetNodeOwner(owner);
                 Nodes.Add(child);
                 Nodes[0].Add(child);
@@ -88,12 +109,12 @@ namespace TearStar.DialogueSystem
                     child.SetNodeOwner(owner);
 
                     child.AddParent(parent);
-                    if (child.NodeID.Trim() == "") child.NodeID = AutoID();
+                    if (child.NodeID == null || child.NodeID.Trim() == "") child.NodeID = AutoID();
                     Nodes[index].Add(child);
                 }
                 else
                 {
-                    if (child.NodeID.Trim() == "") child.NodeID = AutoID();
+                    if (child.NodeID == null || child.NodeID.Trim() == "") child.NodeID = AutoID();
                     child.SetNodeOwner(owner);
 
                     child.AddParent(parent);
@@ -104,13 +125,12 @@ namespace TearStar.DialogueSystem
 
             }
         }
-
         public void AddChild(ConditionalDialogueNode parent, ConditionalDialogueNode child, string child_id)
         {
             if (Nodes.Count == 2)
             {
                 if (child.ParentNode == null) child.ParentNode = Nodes[0];
-                if (child.NodeID.Trim() == "") child.NodeID = child_id;
+                child.NodeID = child_id;
                 Nodes.Add(child);
                 Nodes[0].Add(child);
             }
@@ -123,12 +143,12 @@ namespace TearStar.DialogueSystem
                     //Multiple Parents
                     child.MultipleParents = true;
                     child.AddParent(parent);
-                    if (child.NodeID.Trim() == "") child.NodeID = child_id;
+                    child.NodeID = child_id;
                     Nodes[index].Add(child);
                 }
                 else
                 {
-                    if (child.NodeID.Trim() == "") child.NodeID = child_id;
+                    child.NodeID = child_id;
                     child.AddParent(parent);
                     Nodes.Add(child);
                     Nodes[index].Add(child);
@@ -143,7 +163,7 @@ namespace TearStar.DialogueSystem
             if (Nodes.Count == 2)
             {
                 if (child.ParentNode == null) child.ParentNode = Nodes[0];
-                if (child.NodeID.Trim() == "") child.NodeID = child_id;
+                child.NodeID = child_id;
                 child.SetNodeOwner(owner);
 
                 Nodes.Add(child);
@@ -159,12 +179,12 @@ namespace TearStar.DialogueSystem
                     child.MultipleParents = true;
                     child.SetNodeOwner(owner);
                     child.AddParent(parent);
-                    if (child.NodeID.Trim() == "") child.NodeID = child_id;
+                    child.NodeID = child_id;
                     Nodes[index].Add(child);
                 }
                 else
                 {
-                    if (child.NodeID.Trim() == "") child.NodeID = child_id;
+                    child.NodeID = child_id;
                     child.SetNodeOwner(owner);
                     child.AddParent(parent);
                     Nodes.Add(child);
@@ -174,6 +194,12 @@ namespace TearStar.DialogueSystem
 
 
             }
+        }
+        public void AddEnding(ConditionalDialogueNode parent)
+        {
+            int index = SearchNodeIndex(parent.NodeID);
+            Nodes[index].Add(Nodes[1]);
+
         }
 
         public bool DeleteNode(string Value)
@@ -268,22 +294,101 @@ namespace TearStar.DialogueSystem
         {
             DialogueTree dt = new DialogueTree();
 
+            var jsonObject = JObject.Parse(json);
+
+            var nodes = jsonObject["DialogueTree"]["nodes"];
+
+            foreach (var item in nodes)
+            {
+                var currentObject = item;
+                string value = (string)currentObject["DialogueNode"]["value"];
+                var parentNodes = currentObject["DialogueNode"]["parentNode"];
+                string method = (string)currentObject["DialogueNode"]["method"];
+                string safeSave = (string)currentObject["DialogueNode"]["safeSave"];
+                string nodeID = (string)currentObject["DialogueNode"]["nodeID"];
+                string owner = (string)currentObject["DialogueNode"]["owner"];
+                var childrenNodes = currentObject["DialogueNode"]["childrenNodes"];
+
+                //Create Start's Child/Children
+                if (childrenNodes != null)
+                {
+                    foreach (var child in childrenNodes)
+                    {
+                        if (value == ConditionalDialogueNode.StartValue && value != ConditionalDialogueNode.EndValue)
+                        {
+                            dt.AddChild(dt[0], new ConditionalDialogueNode("", null), (string)child["nodeID"],null);
+                        }
+                        else
+                        {
+                            int index = dt.SearchNodeIndex(nodeID);
+                            string childNodeID = (string)child["nodeID"];
+                            if(childNodeID != "end")
+                            {
+                                int childIndex = dt.SearchNodeIndex(childNodeID);
+                                if (childIndex >= 0)
+                                {
+                                    //Child Was Added Before
+                                    dt[index].Add(dt[childIndex]);
+                                }
+                                else
+                                {
+                                    //Child is New
+                                    dt.AddChild(dt[index], new ConditionalDialogueNode("", null, "", (string)child["nodeID"]));
+                                }
+                            }
+                            else
+                            {
+                                dt.AddEnding(dt[index]);
+                            }
+ 
+                        }
+                    }
+                }
+                 
+                //Fill Node Attributes Doesn't care if start or end
+                if (value != ConditionalDialogueNode.StartValue && value != ConditionalDialogueNode.EndValue)
+                {
+                    int index = dt.SearchNodeIndex(nodeID);
+                    if(index > 0)
+                    {
+                        dt[index].Value = value;
+                        dt[index].methodName = safeSave;
+                        if(method != "Constant")
+                        {
+                            var methodInfo = library.GetType().GetRuntimeMethod(method == null ? safeSave : method == "lambda_method" ? safeSave : method, new Type[] { });
+                            var xRef = Expression.Constant(library);
+                            var callRef = Expression.Call(xRef, methodInfo);
+                            var lambda = (Expression<Func<bool>>)Expression.Lambda(callRef);
+                            dt[index].Condition = lambda.Compile();
+                        }
+                        else
+                        {
+                            dt[index].Condition = dt.Constant;
+                        }
+
+                        dt[index].SetNodeOwner(NodeOwner.ParseNodeOwner(owner));
+                    }
+                    else
+                    {
+                        throw new Exception("This node doesn't exists: " + nodeID);
+                    }
+                }
+            }
 
             return dt;
         }
 
         int id_num = -1;
-        public string AutoID()
+        private string AutoID()
         {
             id_num++;
             return string.Format("auto_{0}", id_num);
         }
 
-
-        public bool NotStartOrEnd(ConditionalDialogueNode node) => node.Value != ConditionalDialogueNode.EndValue && node.Value != ConditionalDialogueNode.StartValue;
+        public bool NotStartOrNotEnd(ConditionalDialogueNode node) => node.Value != ConditionalDialogueNode.EndValue && node.Value != ConditionalDialogueNode.StartValue;
 
         private int indexing = 0;
-        public int Indexing { get
+        private int Indexing { get
             {
                 return indexing;
             } }
@@ -303,10 +408,18 @@ namespace TearStar.DialogueSystem
                     indexing = nextIndex;
                 }
             }
-           
+
+            if (currentNode.Value == ConditionalDialogueNode.StartValue) return GetNextNode();
             return currentNode;
         }
 
-        public bool ReachedEnd { get; private set; }
+        public bool Ready()
+        {
+            if (indexing >= Count || indexing == 1) return false;
+            if (ReachedEnd) return false;
+            return true;
+        }
+        
+        private bool ReachedEnd { get; set; }
     }
 }
