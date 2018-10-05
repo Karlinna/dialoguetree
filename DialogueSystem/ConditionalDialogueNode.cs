@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
+
 using System.IO;
 using Newtonsoft.Json.Linq;
 using System.Linq;
@@ -18,18 +19,11 @@ namespace TearStar.DialogueSystem
         public const int StartIndex = 0;
         public const int EndIndex = 1;
         public string Value { get; set; }
-
         internal string NodeID = "";
-
         INodeOwner NodeOwner;
-
         public ConditionalDialogueNode ParentNode { get; internal set; }
-
         public bool MultipleParents { get; set; }
-
-
         internal List<ConditionalDialogueNode> ParentNodes;
-
         internal Func<bool> Condition;
         internal string methodName;
         List<ConditionalDialogueNode> ChildrenNodes;
@@ -51,8 +45,6 @@ namespace TearStar.DialogueSystem
             ParentNodes = new List<ConditionalDialogueNode>();
         }
         public bool ConditionMet => Condition();
-
-
         public void AddParent(ConditionalDialogueNode parent)
         {
             if (MultipleParents)
@@ -73,7 +65,6 @@ namespace TearStar.DialogueSystem
         }
         public ConditionalDialogueNode[] GetChildren() => ChildrenNodes.ToArray();
         public ConditionalDialogueNode[] GetParents() => MultipleParents ? new ConditionalDialogueNode[] { ParentNode } : ParentNodes.ToArray();
-
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -113,22 +104,17 @@ namespace TearStar.DialogueSystem
         }
         public bool HasChild =>
                 ChildrenNodes.Count > 0;
-
         public int ParentCount => MultipleParents ? ParentNodes.Count : 1;
-
         public ConditionalDialogueNode this[int index]
         {
             get { return ChildrenNodes[index]; }
             set { ChildrenNodes[index] = value; }
         }
-
         public void SetNodeOwner(INodeOwner owner)
         {
             NodeOwner = owner;
         }
-
         public INodeOwner GetNodeOwner() => NodeOwner;
-
         public JObject ToJson()
         {
             MethodInfo mi = Condition.GetMethodInfo();
@@ -178,11 +164,9 @@ namespace TearStar.DialogueSystem
             }
 
         }
-
         public string ToDialogueLike()
         {
             return string.Format("{0} : '{1}'", NodeOwner == null ? "" : NodeOwner.Name, Value);
         }
-
     }
 }
